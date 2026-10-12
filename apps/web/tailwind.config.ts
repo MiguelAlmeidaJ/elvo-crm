@@ -5,7 +5,7 @@ export default {
   theme: { extend: {
     colors: {
       midnight: '#101B2B', mint: '#5DE0BE', cloud: '#F5F7FA',
-      slate: { DEFAULT: '#64748B' }, success: '#16A085',
+      'brand-slate': '#64748B', success: '#16A085',
     },
     fontFamily: { sans: ['var(--font-inter)', 'Arial', 'sans-serif'], sora: ['var(--font-sora)', 'Arial', 'sans-serif'] },
   } },
