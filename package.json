@@ -1,0 +1,15 @@
+{
+  "name": "elvo-crm",
+  "private": true,
+  "packageManager": "pnpm@10.18.3",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter @elvo/web --filter @elvo/api dev",
+    "build": "pnpm --filter @elvo/api build && pnpm --filter @elvo/web build",
+    "lint": "pnpm --recursive lint",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down"
+  }
+}
