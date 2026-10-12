@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-elvo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-elvo_local_only}
+      POSTGRES_DB: ${POSTGRES_DB:-elvo}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - elvo_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-elvo} -d ${POSTGRES_DB:-elvo}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+volumes:
+  elvo_postgres_data:
