@@ -17,6 +17,7 @@ model Organization {
   slug String @unique
   memberships Membership[]
   contacts Contact[]
+  opportunities Opportunity[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -50,7 +51,30 @@ model Contact {
   company String?
   status String @default("Ativo")
   notes String?
+  opportunities Opportunity[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@index([organizationId, name])
+}
+enum OpportunityStage {
+  QUALIFICATION
+  PROPOSAL
+  NEGOTIATION
+  WON
+  LOST
+}
+model Opportunity {
+  id String @id @default(uuid()) @db.Uuid
+  organizationId String @db.Uuid
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  contactId String @db.Uuid
+  contact Contact @relation(fields: [contactId], references: [id], onDelete: Restrict)
+  title String
+  amount Decimal @db.Decimal(14,2)
+  stage OpportunityStage @default(QUALIFICATION)
+  notes String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([organizationId, stage])
+  @@index([organizationId, contactId])
 }

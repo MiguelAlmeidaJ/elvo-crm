@@ -1,2 +1,12 @@
-import { redirect } from 'next/navigation';
-export default function HomePage() { redirect('/clientes'); }
+'use client';
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+type Deal={id:string;title:string;amount:string;stage:string};
+export default function Dashboard(){
+ const router=useRouter();const [clients,setClients]=useState(0);const [deals,setDeals]=useState<Deal[]>([]);const [error,setError]=useState('');
+ useEffect(()=>{Promise.all([fetch('/api/v1/contacts'),fetch('/api/v1/opportunities')]).then(async([a,b])=>{if(a.status===401||b.status===401){router.replace('/login');return;}if(!a.ok||!b.ok)throw Error('Não foi possível consultar os indicadores');const cs=await a.json();setClients(cs.total);setDeals(await b.json());}).catch(e=>setError(e.message));},[router]);
+ const active=deals.filter(d=>!['WON','LOST'].includes(d.stage));
+ const stats=[{label:'Clientes cadastrados',value:String(clients)},{label:'Oportunidades abertas',value:String(active.length)},{label:'Volume em negociação',value:new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(active.reduce((s,d)=>s+Number(d.amount),0))},{label:'Negócios ganhos',value:String(deals.filter(d=>d.stage==='WON').length)}];
+ return <main className="px-5 py-9 md:px-9"><div className="mb-8"><p className="text-xs font-bold uppercase tracking-widest text-success">Visão geral</p><h1 className="mt-2 text-3xl font-bold">Seu negócio em movimento.</h1><p className="mt-2 text-sm text-slate-500">Indicadores atualizados com os dados do CRM.</p></div>{error&&<p role="alert" className="mb-5 text-rose-700">{error}</p>}<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{stats.map(s=><div key={s.label} className="elvo-card p-6"><p className="text-sm text-slate-500">{s.label}</p><p className="mt-4 text-2xl font-bold">{s.value}</p></div>)}</div><div className="mt-6 grid gap-5 lg:grid-cols-2"><section className="elvo-card p-6"><h2 className="text-lg font-bold">Clientes</h2><p className="mt-2 text-sm text-slate-500">Gerencie sua carteira e mantenha as informações organizadas.</p><Link className="mt-5 inline-block font-semibold text-emerald-700" href="/clientes">Ver clientes →</Link></section><section className="elvo-card p-6"><h2 className="text-lg font-bold">Pipeline</h2><p className="mt-2 text-sm text-slate-500">Negociações distribuídas pelas etapas comerciais.</p><Link className="mt-5 inline-block font-semibold text-emerald-700" href="/oportunidades">Ver oportunidades →</Link></section></div></main>;
+}
