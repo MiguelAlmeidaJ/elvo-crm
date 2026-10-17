@@ -1,38 +1,45 @@
 # ELVO CRM
 
-Monorepo TypeScript do ELVO CRM, produto da ANOAR, preparado para evolução multi-tenant.
+Monorepo TypeScript do ELVO CRM, produto da ANOAR.
 
 ## Stack
-- **Web:** Next.js 15 (App Router), React 19, Tailwind CSS 3, SCSS e React Icons
-- **API:** NestJS 11, Prisma ORM 6, PostgreSQL
-- **Infra:** Docker Compose para PostgreSQL; PM2 para Web/API
-- **Gerenciador:** pnpm workspaces
+Next.js 15 / React 19, NestJS 11, Prisma 6, PostgreSQL, pnpm workspace, Docker Compose e PM2.
 
-## Pré-requisitos
-Node.js >= 20, pnpm 10 e Docker com Compose.
-
-## Desenvolvimento
+## Inicialização local
 ```bash
 cp .env.example .env
 cp apps/api/.env.example apps/api/.env
+# Preencha SESSION_SECRET (>=32 caracteres aleatórios) e SETUP_KEY com valores secretos exclusivos.
 pnpm install
 docker compose up -d
 pnpm --filter @elvo/api prisma:generate
-pnpm --filter @elvo/api prisma:migrate
+pnpm --filter @elvo/api prisma:deploy
 pnpm dev
 ```
-
 Web: http://localhost:3000 · API: http://localhost:3001/api/v1 · Health: http://localhost:3001/api/v1/health
 
-> O arquivo `apps/api/.env` configura a conexão usada pelo Prisma CLI e pela API. Em produção, injete os segredos pelo ambiente; nunca os versionar.
+## Primeiro usuário e organização
+A criação inicial é permitida apenas uma vez e exige `SETUP_KEY`. Exemplo:
 
-## Build e PM2
 ```bash
-pnpm build
-pm2 start ecosystem.config.cjs
+curl -X POST http://localhost:3000/api/v1/auth/bootstrap \
+  -H 'Content-Type: application/json' \
+  -d '{"key":"SUA_SETUP_KEY","name":"Administrador","email":"admin@exemplo.com","password":"SENHA_FORTE_COM_12_OU_MAIS","organization":"ANOAR"}'
 ```
+Depois, faça login em `/login`. Remova `SETUP_KEY` da configuração após a criação do administrador e reinicie a API. Não exponha a chave em repositórios ou logs.
 
-O PM2 inicia aplicações já compiladas. O PostgreSQL continua no Docker. Use Nginx como proxy reverso e HTTPS no servidor.
+## Deploy existente com PM2
+Configure `SESSION_SECRET` e `WEB_ORIGIN` na API; configure `API_INTERNAL_URL` na Web caso a API não esteja disponível em `http://127.0.0.1:3001`.
+```bash
+pnpm install --frozen-lockfile
+pnpm --filter @elvo/api prisma:generate
+pnpm --filter @elvo/api prisma:deploy
+pnpm build
+pm2 restart ecosystem.config.cjs --update-env
+```
+O PostgreSQL continua no Docker. Use Nginx com HTTPS. A aplicação Web faz proxy das solicitações `/api/v1/*` para a API para manter o cookie HttpOnly na mesma origem.
 
-## Próximas etapas
-Autenticação, memberships e isolamento por organização, permissões, auditoria e módulos de CRM. **Não existe autenticação ou isolamento de tenants implementado nesta fundação**; não exponha operações de dados de clientes até essas camadas estarem prontas.
+## Escopo implementado
+Login, sessão assinada HttpOnly e SameSite=Lax, bootstrap inicial, CRUD de clientes com validação, filtro e paginação, isolamento por organização derivada da sessão. Ainda faltam fluxo de convite de usuários, recuperação de senha, revogação de sessões, auditoria, permissões granulares, demais módulos do CRM e testes automatizados. Não há auto cadastro público.
+
+Importante: antes de produção pública, adicione proteção contra força bruta no login/bootstrap, gestão de sessões e testes de autorização. 

@@ -1,0 +1,4 @@
+ALTER TABLE "User" ADD COLUMN "passwordHash" TEXT;
+ALTER TABLE "Contact" ADD COLUMN "company" TEXT;
+ALTER TABLE "Contact" ADD COLUMN "status" TEXT NOT NULL DEFAULT 'Ativo';
+ALTER TABLE "Contact" ADD COLUMN "notes" TEXT;
