@@ -1,0 +1,12 @@
+CREATE TABLE "Task" ("id" UUID NOT NULL, "organizationId" UUID NOT NULL, "contactId" UUID, "title" TEXT NOT NULL, "dueAt" TIMESTAMP(3), "done" BOOLEAN NOT NULL DEFAULT false, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "Task_pkey" PRIMARY KEY ("id"));
+CREATE TABLE "Activity" ("id" UUID NOT NULL, "organizationId" UUID NOT NULL, "contactId" UUID NOT NULL, "type" TEXT NOT NULL DEFAULT 'NOTE', "description" TEXT NOT NULL, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, CONSTRAINT "Activity_pkey" PRIMARY KEY ("id"));
+CREATE TABLE "Proposal" ("id" UUID NOT NULL, "organizationId" UUID NOT NULL, "opportunityId" UUID NOT NULL, "title" TEXT NOT NULL, "amount" DECIMAL(14,2) NOT NULL, "status" TEXT NOT NULL DEFAULT 'DRAFT', "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL, CONSTRAINT "Proposal_pkey" PRIMARY KEY ("id"));
+CREATE INDEX "Task_organizationId_done_idx" ON "Task"("organizationId","done");
+CREATE INDEX "Activity_organizationId_contactId_createdAt_idx" ON "Activity"("organizationId","contactId","createdAt");
+CREATE INDEX "Proposal_organizationId_status_idx" ON "Proposal"("organizationId","status");
+ALTER TABLE "Task" ADD CONSTRAINT "Task_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Task" ADD CONSTRAINT "Task_contactId_fkey" FOREIGN KEY ("contactId") REFERENCES "Contact"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Activity" ADD CONSTRAINT "Activity_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Activity" ADD CONSTRAINT "Activity_contactId_fkey" FOREIGN KEY ("contactId") REFERENCES "Contact"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Proposal" ADD CONSTRAINT "Proposal_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Proposal" ADD CONSTRAINT "Proposal_opportunityId_fkey" FOREIGN KEY ("opportunityId") REFERENCES "Opportunity"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

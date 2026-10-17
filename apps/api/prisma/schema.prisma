@@ -18,6 +18,9 @@ model Organization {
   memberships Membership[]
   contacts Contact[]
   opportunities Opportunity[]
+  tasks Task[]
+  activities Activity[]
+  proposals Proposal[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -52,6 +55,9 @@ model Contact {
   status String @default("Ativo")
   notes String?
   opportunities Opportunity[]
+  tasks Task[]
+  activities Activity[]
+  proposals Proposal[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@index([organizationId, name])
@@ -75,6 +81,45 @@ model Opportunity {
   notes String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  proposals Proposal[]
   @@index([organizationId, stage])
   @@index([organizationId, contactId])
+}
+
+model Task {
+  id String @id @default(uuid()) @db.Uuid
+  organizationId String @db.Uuid
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  contactId String? @db.Uuid
+  contact Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  title String
+  dueAt DateTime?
+  done Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([organizationId, done])
+}
+model Activity {
+  id String @id @default(uuid()) @db.Uuid
+  organizationId String @db.Uuid
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  contactId String @db.Uuid
+  contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  type String @default("NOTE")
+  description String
+  createdAt DateTime @default(now())
+  @@index([organizationId, contactId, createdAt])
+}
+model Proposal {
+  id String @id @default(uuid()) @db.Uuid
+  organizationId String @db.Uuid
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  opportunityId String @db.Uuid
+  opportunity Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Restrict)
+  title String
+  amount Decimal @db.Decimal(14,2)
+  status String @default("DRAFT")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([organizationId, status])
 }
