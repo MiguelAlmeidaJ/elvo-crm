@@ -20,7 +20,6 @@ model Organization {
   opportunities Opportunity[]
   tasks Task[]
   activities Activity[]
-  proposals Proposal[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
