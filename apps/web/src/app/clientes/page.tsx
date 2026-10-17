@@ -1,5 +1,5 @@
-import Link from 'next/link';
 'use client';
+import Link from 'next/link';
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 type Contact = { id: string; name: string; email: string | null; phone: string | null; company: string | null; status: string; notes: string | null };
