@@ -1,0 +1,1 @@
+O shell das páginas internas está em `src/components/app-shell.tsx` e é aplicado pelo layout raiz de `src/app`. As rotas no App Router ficam diretamente em `src/app/{clientes,oportunidades,tarefas,propostas,relatorios,configuracoes}`. Todas as informações são fictícias e nenhuma mutação é persistida.

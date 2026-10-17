@@ -1,54 +1,11 @@
-import { FiArrowUpRight, FiBarChart2, FiBriefcase, FiCheckSquare, FiChevronDown, FiFileText, FiGrid, FiHelpCircle, FiMenu, FiPlus, FiSearch, FiSettings, FiUsers } from 'react-icons/fi';
-import { BrandLogo } from '@/components/brand-logo';
-
-const navigation = [
-  { label: 'Dashboard', Icon: FiGrid, active: true },
-  { label: 'Clientes', Icon: FiUsers },
-  { label: 'Oportunidades', Icon: FiBriefcase },
-  { label: 'Tarefas', Icon: FiCheckSquare },
-  { label: 'Propostas', Icon: FiFileText },
-  { label: 'Relatórios', Icon: FiBarChart2 },
-  { label: 'Configurações', Icon: FiSettings },
-];
-const metrics = [
-  { label: 'Clientes ativos', value: '128', change: '+12,4%', positive: true },
-  { label: 'Oportunidades', value: '36', change: '+8,2%', positive: true },
-  { label: 'Receita em negociação', value: 'R$ 284.500', change: '+18,6%', positive: true },
-  { label: 'Tarefas pendentes', value: '12', change: '−14,3%', positive: false },
-];
-export default function HomePage() {
-  return (
-    <div className="min-h-screen bg-cloud md:flex">
-      <aside className="elvo-sidebar hidden w-60 shrink-0 flex-col px-4 py-7 md:flex">
-        <div className="px-2 pb-11"><BrandLogo variant="dark" width={174} height={58} priority /></div>
-        <nav aria-label="Menu principal" className="space-y-1">
-          {navigation.map(({ label, Icon, active }) => (
-            <div key={label} aria-current={active ? 'page' : undefined} className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm ${active ? 'bg-mint font-semibold text-midnight' : 'text-slate-300'}`}>
-              <Icon aria-hidden size={17} />{label}
-            </div>
-          ))}
-        </nav>
-        <div className="mt-auto flex items-center gap-3 border-t border-white/10 px-3 pt-6 text-sm text-slate-300"><FiHelpCircle /> Central de ajuda</div>
-      </aside>
-      <main className="min-w-0 flex-1 px-5 pb-14 pt-5 md:px-9">
-        <div className="mb-10 flex items-center justify-between gap-4 border-b border-slate-200 pb-5">
-          <div className="flex items-center gap-3 md:hidden"><FiMenu aria-hidden /><BrandLogo variant="light" width={125} height={42} priority /></div>
-          <div className="hidden max-w-sm flex-1 items-center gap-3 rounded-lg bg-white px-4 py-3 text-sm text-slate-400 md:flex"><FiSearch /> Buscar...</div>
-          <div className="ml-auto flex items-center gap-3"><span className="hidden text-sm text-slate-500 sm:block">ANOAR <FiChevronDown className="inline" /></span><div className="grid size-9 place-items-center rounded-full bg-midnight text-sm font-semibold text-white">A</div></div>
-        </div>
-        <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
-          <div><p className="mb-1 text-sm text-slate-500">Visão geral</p><h1 className="text-3xl font-bold">Dashboard</h1><p className="mt-2 text-sm text-slate-500">Seu negócio em movimento, com mais clareza.</p></div>
-          <button className="elvo-button-primary" type="button" disabled title="Disponível após implementação das oportunidades"><FiPlus /> Novo <FiArrowUpRight /></button>
-        </div>
-        <section aria-label="Indicadores de exemplo" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {metrics.map(metric=>(<article key={metric.label} className="elvo-card p-5"><p className="text-sm text-slate-500">{metric.label}</p><p className="mt-3 font-sora text-2xl font-bold">{metric.value}</p><p className={`mt-3 text-sm font-semibold ${metric.positive?'text-success':'text-rose-600'}`}>{metric.change} <span className="font-normal text-slate-400">· exemplo</span></p></article>))}
-        </section>
-        <section className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-          <article className="elvo-card p-6"><div className="flex items-center justify-between gap-3"><h2 className="text-base font-semibold">Desempenho comercial</h2><span className="text-xs text-slate-500">Dados demonstrativos</span></div><div className="mt-8 grid h-64 place-items-center rounded-xl border border-dashed border-slate-200 bg-cloud/50 text-center text-sm text-slate-500">O gráfico será conectado aos dados reais do CRM.</div></article>
-          <article className="elvo-card p-6"><h2 className="text-base font-semibold">Oportunidades por etapa</h2><div className="mt-8 grid h-64 place-items-center rounded-xl border border-dashed border-slate-200 bg-cloud/50 text-center text-sm text-slate-500">O funil comercial aparecerá aqui.</div></article>
-        </section>
-        <p className="mt-6 text-xs text-slate-400">Prévia visual do design system ELVO CRM. Indicadores fictícios; funcionalidades ainda não conectadas à API.</p>
-      </main>
-    </div>
-  );
-}
+import { FiArrowUpRight, FiBriefcase, FiCheckCircle, FiTrendingUp, FiUsers } from 'react-icons/fi';
+import { PageHeading, PreviewButton } from '@/components/page-heading';
+import { StatusPill } from '@/components/status-pill';
+const stats=[{label:'Clientes ativos',value:'128',delta:'+12,4%',icon:FiUsers},{label:'Oportunidades',value:'36',delta:'+8,2%',icon:FiBriefcase},{label:'Volume em negociação',value:'R$ 284.500',delta:'+18,6%',icon:FiTrendingUp},{label:'Tarefas concluídas',value:'84%',delta:'+5,1%',icon:FiCheckCircle}];
+const deals=[{name:'Redesign institucional',company:'Studio Horizonte',value:'R$ 24.800',status:'Negociação'},{name:'Implantação comercial',company:'Grupo Atlas',value:'R$ 18.500',status:'Proposta'},{name:'Website corporativo',company:'Nova Energia',value:'R$ 12.900',status:'Qualificação'}];
+export default function Dashboard(){return <><PageHeading eyebrow="Visão geral · ANOAR" title="Bom ter você por aqui." description="Acompanhe o que importa para o crescimento do negócio." action={<PreviewButton label="Criar oportunidade"/>}/>
+<section aria-label="Indicadores demonstrativos" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{stats.map(({label,value,delta,icon:Icon})=><article key={label} className="elvo-card p-6"><div className="flex items-center justify-between"><p className="text-sm text-slate-500">{label}</p><span className="rounded-xl bg-cloud p-2.5 text-success"><Icon size={18}/></span></div><p className="mt-4 text-3xl font-bold text-midnight">{value}</p><p className="mt-2 text-xs font-semibold text-success">{delta} <span className="font-normal text-slate-400">· período ilustrativo</span></p></article>)}</section>
+<div className="mt-6 grid gap-6 xl:grid-cols-[1.45fr_1fr]">
+<section className="elvo-card overflow-hidden"><div className="flex items-center justify-between p-6"><div><h2 className="text-lg font-bold">Oportunidades recentes</h2><p className="mt-1 text-sm text-slate-500">Negócios em andamento</p></div><FiArrowUpRight className="text-slate-400"/></div><div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead className="bg-cloud text-xs uppercase tracking-wider text-slate-500"><tr><th className="px-6 py-3">Negócio</th><th className="px-6 py-3">Valor</th><th className="px-6 py-3">Etapa</th></tr></thead><tbody>{deals.map(d=><tr key={d.name} className="border-t border-slate-100"><td className="px-6 py-4"><strong className="block text-midnight">{d.name}</strong><span className="text-slate-500">{d.company}</span></td><td className="px-6 py-4 font-semibold">{d.value}</td><td className="px-6 py-4"><StatusPill status={d.status}/></td></tr>)}</tbody></table></div></section>
+<section className="elvo-card p-6"><h2 className="text-lg font-bold">Panorama do pipeline</h2><p className="mt-1 text-sm text-slate-500">Distribuição ilustrativa por etapa</p><div className="mt-8 space-y-6">{[{label:'Qualificação',pct:70,count:12},{label:'Proposta',pct:48,count:8},{label:'Negociação',pct:30,count:5}].map(x=><div key={x.label}><div className="mb-2 flex justify-between text-sm"><span className="font-medium">{x.label}</span><span className="text-slate-500">{x.count} negócios</span></div><div className="h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-mint" style={{width:`${x.pct}%`}}/></div></div>)}</div></section>
+</div></>}
