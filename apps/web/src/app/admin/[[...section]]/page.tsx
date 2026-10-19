@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
+import AdminCompanies from '../../../components/AdminCompanies';
 import { FiBriefcase, FiCheck, FiLayers, FiPlus, FiSettings, FiUsers } from 'react-icons/fi';
 
 type Role = 'SYSTEM_ADMIN' | 'TENANT_ADMIN' | 'USER';
@@ -78,17 +79,14 @@ export default function SystemAdminPage() {
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Falha ao atualizar módulo'); } finally { setBusy(''); }
   }
 
+  if (section === 'empresas') return <AdminCompanies/>;
+
   return <main className="px-5 py-9 md:px-9"><div className="mx-auto max-w-7xl">
     <span className="eyebrow">Administração da plataforma</span>
     <div className="mt-3 flex items-center gap-3"><span className="grid size-11 place-items-center rounded-xl bg-mint/20 text-success"><meta.Icon size={20}/></span><div><h1 className="text-3xl font-semibold">{meta.title}</h1><p className="mt-1 text-sm text-slate-500">{meta.description}</p></div></div>
     {error ? <p role="alert" className="mt-5 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</p> : null}
     {notice ? <p role="status" className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800"><FiCheck className="mr-2 inline"/>{notice}</p> : null}
     {!data ? <p className="mt-8 text-sm text-slate-500">Carregando...</p> : null}
-
-    {data && section === 'empresas' ? <div className="mt-8 grid gap-6 xl:grid-cols-[1.3fr_.7fr]">
-      <section className="elvo-card overflow-hidden"><div className="border-b border-slate-100 p-6"><h2 className="font-semibold">{data.tenants.length} empresas cadastradas</h2></div><div className="divide-y divide-slate-100">{data.tenants.map((tenant) => <div key={tenant.id} className="flex flex-wrap items-center gap-4 p-5"><div className="grid size-10 place-items-center rounded-xl bg-slate-100 font-bold text-slate-500">{tenant.name.slice(0, 1)}</div><div className="min-w-48 flex-1"><p className="text-sm font-semibold">{tenant.name}</p><p className="text-xs text-slate-500">{tenant.slug}</p></div><div className="flex gap-5 text-center text-xs text-slate-500"><span><strong className="block text-base text-midnight">{tenant._count.memberships}</strong>usuários</span><span><strong className="block text-base text-midnight">{tenant._count.contacts}</strong>clientes</span></div></div>)}</div></section>
-      <form onSubmit={createTenant} className="elvo-card h-fit space-y-4 p-6"><h2 className="text-lg font-semibold">Nova empresa</h2><label className="block text-xs font-semibold">Nome<input required minLength={2} value={tenantForm.name} onChange={(event) => setTenantForm({ ...tenantForm, name: event.target.value })} className="mt-2 w-full rounded-xl border p-3"/></label><label className="block text-xs font-semibold">Identificador<input required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" value={tenantForm.slug} onChange={(event) => setTenantForm({ ...tenantForm, slug: event.target.value.toLowerCase() })} placeholder="empresa-exemplo" className="mt-2 w-full rounded-xl border p-3"/></label><button disabled={Boolean(busy)} className="elvo-button-primary w-full"><FiPlus/>Criar empresa</button></form>
-    </div> : null}
 
     {data && section === 'modulos' ? <section className="elvo-card mt-8 overflow-x-auto p-6"><table className="w-full min-w-[700px] border-collapse text-left text-sm"><thead><tr className="border-b text-xs uppercase tracking-wider text-slate-400"><th className="pb-4">Empresa</th>{data.modules.map((module) => <th key={module.key} className="pb-4 text-center">{module.name}</th>)}</tr></thead><tbody>{data.tenants.map((tenant) => <tr key={tenant.id} className="border-b border-slate-100 last:border-0"><td className="py-5"><strong>{tenant.name}</strong><span className="block text-xs text-slate-400">{tenant.slug}</span></td>{data.modules.map((module) => { const enabled = module.organizations.some((item) => item.organizationId === tenant.id && item.enabled); const action = `${tenant.id}-${module.key}`; return <td key={module.key} className="py-5 text-center"><button type="button" role="switch" aria-checked={enabled} aria-label={`${module.name} para ${tenant.name}`} disabled={busy === action} onClick={() => toggleModule(tenant.id, module.key, !enabled)} className={`relative h-7 w-12 rounded-full transition-colors ${enabled ? 'bg-success' : 'bg-slate-200'}`}><span className={`absolute top-1 size-5 rounded-full bg-white shadow transition-transform ${enabled ? 'left-6' : 'left-1'}`}/></button></td>; })}</tr>)}</tbody></table><div className="mt-6 grid gap-3 md:grid-cols-3">{data.modules.map((module) => <div key={module.key} className="rounded-xl bg-slate-50 p-4"><p className="text-sm font-semibold">{module.name}</p><p className="mt-1 text-xs leading-5 text-slate-500">{module.description}</p></div>)}</div></section> : null}
 

@@ -96,6 +96,8 @@ export class AuthService {
   async switchOrganization(identity: Identity, organizationId: string) {
     const membership = await this.db.membership.findUnique({ where: { organizationId_userId: { organizationId, userId: identity.userId } } });
     if (!membership) throw new UnauthorizedException('Você não possui acesso a esta empresa');
+    const organization = await this.db.organization.findUnique({ where: { id: organizationId }, select: { active: true } });
+    if (!organization?.active) throw new UnauthorizedException('Empresa inativa');
     return { userId: identity.userId, organizationId, role: membership.role } satisfies Identity;
   }
 }
