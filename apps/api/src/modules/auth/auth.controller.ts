@@ -1,8 +1,9 @@
-import { Body, Controller, Get, Headers, HttpCode, Post, Res, UseGuards } from '@nestjs/common';
-import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { Body, Controller, Get, Headers, HttpCode, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { IsEmail, IsNotEmpty, IsString, IsUUID, MinLength } from 'class-validator';
 type CookieResponse = { setHeader(name: string, value: string): void };
 import { AuthService } from './auth.service';
 import { SessionGuard } from './session.guard';
+import type { AuthenticatedRequest } from './auth.types';
 
 class LoginDto {
   @IsEmail() email!: string;
@@ -15,6 +16,7 @@ class SetupDto {
   @IsString() @MinLength(12) password!: string;
   @IsString() @IsNotEmpty() organization!: string;
 }
+class SwitchOrganizationDto { @IsUUID() organizationId!: string; }
 @Controller('auth')
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
@@ -32,4 +34,10 @@ export class AuthController {
   }
   @Get('me') @UseGuards(SessionGuard)
   me(@Headers('cookie') cookie?: string) { return this.auth.me(this.auth.readCookie(cookie)); }
+  @Post('switch-organization') @HttpCode(200) @UseGuards(SessionGuard)
+  async switchOrganization(@Req() request: AuthenticatedRequest, @Body() dto: SwitchOrganizationDto, @Res({ passthrough: true }) response: CookieResponse) {
+    const identity = await this.auth.switchOrganization(request.identity, dto.organizationId);
+    response.setHeader('Set-Cookie', this.auth.sessionCookie(identity));
+    return this.auth.me(identity);
+  }
 }

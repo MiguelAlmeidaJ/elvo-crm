@@ -5,13 +5,18 @@ import { HealthController } from './modules/health/health.controller';
 import { AuthController } from './modules/auth/auth.controller';
 import { AuthService } from './modules/auth/auth.service';
 import { SessionGuard } from './modules/auth/session.guard';
+import { RolesGuard } from './modules/auth/roles.guard';
+import { ModuleGuard } from './modules/auth/module.guard';
 import { ContactsController } from './modules/contacts/contacts.controller';
+import { LeadsController } from './modules/leads/leads.controller';
+import { AdministrationController } from './modules/administration/administration.controller';
+import { WhatsappController } from './modules/whatsapp/whatsapp.controller';
 import { WorkflowController } from './modules/workflow/workflow.controller';
 import { OpportunitiesController } from './modules/opportunities/opportunities.controller';
 
 @Module({
   imports: [ConfigModule.forRoot({ isGlobal: true }), DatabaseModule],
-  controllers: [HealthController, AuthController, ContactsController, OpportunitiesController, WorkflowController],
-  providers: [AuthService, SessionGuard],
+  controllers: [HealthController, AuthController, ContactsController, OpportunitiesController, WorkflowController, LeadsController, AdministrationController, WhatsappController],
+  providers: [AuthService, SessionGuard, RolesGuard, ModuleGuard],
 })
 export class AppModule {}

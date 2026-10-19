@@ -1,11 +1,11 @@
-import { BadRequestException, ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { createHmac, randomBytes, scrypt as scryptCb, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 import { PrismaService } from '../../database/prisma.service';
+import type { Identity, MembershipRole } from './auth.types';
 
 const scrypt = promisify(scryptCb);
 const COOKIE_NAME = 'elvo_session';
-type Identity = { userId: string; organizationId: string; role: string };
 @Injectable()
 export class AuthService {
   constructor(private readonly db: PrismaService) {}
@@ -43,7 +43,8 @@ export class AuthService {
       const data = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
       if (typeof data.exp !== 'number' || data.exp < Date.now() ||
         typeof data.userId !== 'string' || typeof data.organizationId !== 'string') throw new Error('invalid');
-      return { userId: data.userId, organizationId: data.organizationId, role: data.role };
+      if (!['SYSTEM_ADMIN', 'TENANT_ADMIN', 'USER'].includes(data.role)) throw new Error('invalid');
+      return { userId: data.userId, organizationId: data.organizationId, role: data.role as MembershipRole };
     } catch { throw new UnauthorizedException('Sessão expirada'); }
   }
   sessionCookie(identity: Identity) {
@@ -62,8 +63,10 @@ export class AuthService {
     await this.db.$transaction(async tx => {
       if (await tx.user.count()) throw new ConflictException('Instalação já inicializada');
       const org = await tx.organization.create({ data: { name: input.organization.trim(), slug } });
+      const modules = await tx.systemModule.findMany({ select: { id: true, key: true } });
+      if (modules.length) await tx.organizationModule.createMany({ data: modules.map((module) => ({ organizationId: org.id, moduleId: module.id, enabled: module.key === 'LEADS' })) });
       await tx.user.create({ data: { name: input.name.trim(), email, passwordHash,
-        memberships: { create: { organizationId: org.id, role: 'OWNER' } } } });
+        memberships: { create: { organizationId: org.id, role: 'SYSTEM_ADMIN' } } } });
     });
     return { ok: true };
   }
@@ -73,13 +76,26 @@ export class AuthService {
     if (!user?.passwordHash || !(await this.verify(password, user.passwordHash))) throw new UnauthorizedException('Credenciais inválidas');
     const membership = user.memberships[0];
     if (!membership) throw new UnauthorizedException('Usuário sem organização');
-    return { identity: { userId: user.id, organizationId: membership.organizationId, role: membership.role },
-      user: { id: user.id, name: user.name, email: user.email, role: membership.role, organization: membership.organization.name } };
+    const identity = { userId: user.id, organizationId: membership.organizationId, role: membership.role };
+    return { identity, user: await this.me(identity) };
   }
   async me(id: Identity) {
-    const member = await this.db.membership.findUnique({ where: { organizationId_userId: { organizationId: id.organizationId, userId: id.userId } },
-      include: { user: true, organization: true } });
+    const [member, memberships, modules] = await Promise.all([
+      this.db.membership.findUnique({ where: { organizationId_userId: { organizationId: id.organizationId, userId: id.userId } }, include: { user: true, organization: true } }),
+      this.db.membership.findMany({ where: { userId: id.userId }, orderBy: { organization: { name: 'asc' } }, include: { organization: true } }),
+      this.db.organizationModule.findMany({ where: { organizationId: id.organizationId, enabled: true, module: { active: true } }, select: { module: { select: { key: true } } } }),
+    ]);
     if (!member) throw new UnauthorizedException();
-    return { id: member.user.id, name: member.user.name, email: member.user.email, role: member.role, organization: member.organization.name };
+    return {
+      id: member.user.id, name: member.user.name, email: member.user.email, role: member.role,
+      organization: member.organization.name, organizationId: member.organization.id,
+      organizations: memberships.map((membership) => ({ id: membership.organization.id, name: membership.organization.name, slug: membership.organization.slug, role: membership.role })),
+      modules: modules.map((item) => item.module.key),
+    };
+  }
+  async switchOrganization(identity: Identity, organizationId: string) {
+    const membership = await this.db.membership.findUnique({ where: { organizationId_userId: { organizationId, userId: identity.userId } } });
+    if (!membership) throw new UnauthorizedException('Você não possui acesso a esta empresa');
+    return { userId: identity.userId, organizationId, role: membership.role } satisfies Identity;
   }
 }

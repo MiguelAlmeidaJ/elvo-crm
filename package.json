@@ -9,6 +9,7 @@
     "dev": "pnpm --parallel --filter @elvo/web --filter @elvo/api dev",
     "build": "pnpm --filter @elvo/api build && pnpm --filter @elvo/web build",
     "lint": "pnpm --recursive lint",
+    "user:create": "pnpm --filter @elvo/api user:create",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down"
   }

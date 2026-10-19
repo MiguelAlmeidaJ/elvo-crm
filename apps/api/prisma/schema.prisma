@@ -1,66 +1,131 @@
 generator client {
   provider = "prisma-client-js"
 }
+
 datasource db {
   provider = "postgresql"
-  url = env("DATABASE_URL")
+  url      = env("DATABASE_URL")
 }
+
 enum MembershipRole {
-  OWNER
-  ADMIN
-  MANAGER
-  MEMBER
+  SYSTEM_ADMIN
+  TENANT_ADMIN
+  USER
 }
+
+enum ModuleKey {
+  LEADS
+  WHATSAPP
+  EMAIL
+}
+
 model Organization {
-  id String @id @default(uuid()) @db.Uuid
-  name String
-  slug String @unique
-  memberships Membership[]
-  contacts Contact[]
+  id            String               @id @default(uuid()) @db.Uuid
+  name          String
+  slug          String               @unique
+  memberships   Membership[]
+  contacts      Contact[]
   opportunities Opportunity[]
-  tasks Task[]
-  activities Activity[]
-  proposals Proposal[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  tasks         Task[]
+  activities    Activity[]
+  proposals     Proposal[]
+  modules       OrganizationModule[]
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
 }
+
+model SystemModule {
+  id            String               @id @default(uuid()) @db.Uuid
+  key           ModuleKey            @unique
+  name          String
+  description   String
+  active        Boolean              @default(true)
+  organizations OrganizationModule[]
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  @@map("Module")
+}
+
+model OrganizationModule {
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @db.Uuid
+  moduleId       String       @db.Uuid
+  enabled        Boolean      @default(false)
+  config         Json?
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  module         SystemModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([organizationId, moduleId])
+  @@index([moduleId, enabled])
+}
+
 model User {
-  id String @id @default(uuid()) @db.Uuid
-  name String
-  email String @unique
+  id           String       @id @default(uuid()) @db.Uuid
+  name         String
+  email        String       @unique
   passwordHash String?
-  memberships Membership[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  memberships  Membership[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
 }
+
 model Membership {
-  id String @id @default(uuid()) @db.Uuid
-  organizationId String @db.Uuid
-  userId String @db.Uuid
-  role MembershipRole @default(MEMBER)
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+  id             String         @id @default(uuid()) @db.Uuid
+  organizationId String         @db.Uuid
+  userId         String         @db.Uuid
+  role           MembershipRole @default(USER)
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime       @default(now())
+
   @@unique([organizationId, userId])
   @@index([userId])
 }
+
 model Contact {
-  id String @id @default(uuid()) @db.Uuid
-  organizationId String @db.Uuid
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  name String
-  email String?
-  phone String?
-  company String?
-  status String @default("Ativo")
-  notes String?
-  opportunities Opportunity[]
-  tasks Task[]
-  activities Activity[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id               String        @id @default(uuid()) @db.Uuid
+  organizationId   String        @db.Uuid
+  organization     Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name             String
+  entityType       String        @default("COMPANY")
+  document         String?
+  email            String?
+  phone            String?
+  secondaryPhone   String?
+  company          String?
+  jobTitle         String?
+  website          String?
+  address          String?
+  city             String?
+  state            String?
+  postalCode       String?
+  country          String?       @default("Brasil")
+  category         String?
+  source           String        @default("MANUAL")
+  tags             String[]      @default([])
+  externalProvider String?
+  externalId       String?
+  latitude         Decimal?      @db.Decimal(10, 7)
+  longitude        Decimal?      @db.Decimal(10, 7)
+  rating           Decimal?      @db.Decimal(2, 1)
+  ratingCount      Int?
+  status           String        @default("Ativo")
+  notes            String?
+  opportunities    Opportunity[]
+  tasks            Task[]
+  activities       Activity[]
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  @@unique([organizationId, externalProvider, externalId])
   @@index([organizationId, name])
+  @@index([organizationId, document])
+  @@index([organizationId, city, state])
 }
+
 enum OpportunityStage {
   QUALIFICATION
   PROPOSAL
@@ -68,57 +133,64 @@ enum OpportunityStage {
   WON
   LOST
 }
+
 model Opportunity {
-  id String @id @default(uuid()) @db.Uuid
-  organizationId String @db.Uuid
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  contactId String @db.Uuid
-  contact Contact @relation(fields: [contactId], references: [id], onDelete: Restrict)
-  title String
-  amount Decimal @db.Decimal(14,2)
-  stage OpportunityStage @default(QUALIFICATION)
-  notes String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  proposals Proposal[]
+  id             String           @id @default(uuid()) @db.Uuid
+  organizationId String           @db.Uuid
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  contactId      String           @db.Uuid
+  contact        Contact          @relation(fields: [contactId], references: [id], onDelete: Restrict)
+  title          String
+  amount         Decimal          @db.Decimal(14, 2)
+  stage          OpportunityStage @default(QUALIFICATION)
+  notes          String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  proposals      Proposal[]
+
   @@index([organizationId, stage])
   @@index([organizationId, contactId])
 }
 
 model Task {
-  id String @id @default(uuid()) @db.Uuid
-  organizationId String @db.Uuid
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  contactId String? @db.Uuid
-  contact Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
-  title String
-  dueAt DateTime?
-  done Boolean @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  contactId      String?      @db.Uuid
+  contact        Contact?     @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  title          String
+  dueAt          DateTime?
+  done           Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
   @@index([organizationId, done])
 }
+
 model Activity {
-  id String @id @default(uuid()) @db.Uuid
-  organizationId String @db.Uuid
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  contactId String @db.Uuid
-  contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
-  type String @default("NOTE")
-  description String
-  createdAt DateTime @default(now())
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  contactId      String       @db.Uuid
+  contact        Contact      @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  type           String       @default("NOTE")
+  description    String
+  createdAt      DateTime     @default(now())
+
   @@index([organizationId, contactId, createdAt])
 }
+
 model Proposal {
-  id String @id @default(uuid()) @db.Uuid
-  organizationId String @db.Uuid
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  opportunityId String @db.Uuid
-  opportunity Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Restrict)
-  title String
-  amount Decimal @db.Decimal(14,2)
-  status String @default("DRAFT")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String       @id @default(uuid()) @db.Uuid
+  organizationId String       @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  opportunityId  String       @db.Uuid
+  opportunity    Opportunity  @relation(fields: [opportunityId], references: [id], onDelete: Restrict)
+  title          String
+  amount         Decimal      @db.Decimal(14, 2)
+  status         String       @default("DRAFT")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
   @@index([organizationId, status])
 }

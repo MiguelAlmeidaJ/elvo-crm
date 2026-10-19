@@ -15,5 +15,18 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+  wppconnect:
+    image: wppconnect/wppconnect-server:2.10.18
+    restart: unless-stopped
+    environment:
+      SECRET_KEY: ${WPP_SECRET_KEY:-elvo-local-wppconnect-secret-change-before-production}
+      MANAGER_ENABLED: "false"
+    ports:
+      - "127.0.0.1:${WPP_PORT:-21465}:21465"
+    volumes:
+      - elvo_wppconnect_tokens:/usr/src/wpp-server/tokens
+      - elvo_wppconnect_sessions:/usr/src/wpp-server/userDataDir
 volumes:
   elvo_postgres_data:
+  elvo_wppconnect_tokens:
+  elvo_wppconnect_sessions:
