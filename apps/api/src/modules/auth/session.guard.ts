@@ -13,8 +13,14 @@ export class SessionGuard implements CanActivate {
       if (origin && origin !== allowed) throw new ForbiddenException('Origem não autorizada');
     }
     req.identity = this.auth.readCookie(req.headers.cookie);
-    const organization = await this.db.organization.findUnique({ where: { id: req.identity.organizationId }, select: { active: true } });
+    const [organization, user, membership] = await Promise.all([
+      this.db.organization.findUnique({ where: { id: req.identity.organizationId }, select: { active: true } }),
+      this.db.user.findUnique({ where: { id: req.identity.userId }, select: { active: true } }),
+      this.db.membership.findUnique({ where: { organizationId_userId: { organizationId: req.identity.organizationId, userId: req.identity.userId } }, select: { role: true } }),
+    ]);
+    if (!user?.active) throw new ForbiddenException('Usuário inativo');
     if (!organization?.active) throw new ForbiddenException('Empresa inativa. Solicite a reativação ao administrador.');
+    if (!membership || membership.role !== req.identity.role) throw new ForbiddenException('Sessão desatualizada. Entre novamente.');
     return true;
   }
 }
