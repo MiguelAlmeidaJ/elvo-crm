@@ -48,6 +48,16 @@ class MembershipDto {
   @IsUUID() organizationId!: string;
   @IsIn(['SYSTEM_ADMIN','TENANT_ADMIN','USER']) role!: MembershipRole;
 }
+class EditUserDto {
+  @IsString() @MinLength(2) @MaxLength(120) name!: string;
+  @IsEmail() email!: string;
+  @IsOptional() @IsString() @MinLength(12) @MaxLength(200) password?: string;
+}
+class UserStatusDto { @IsBoolean() active!: boolean; }
+class MembershipDto {
+  @IsUUID() organizationId!: string;
+  @IsIn(['SYSTEM_ADMIN','TENANT_ADMIN','USER']) role!: MembershipRole;
+}
 class SwitchTenantDto { @IsUUID() organizationId!: string; }
 class ModuleToggleDto { @IsBoolean() enabled!: boolean; }
 type CookieResponse = { setHeader(name: string, value: string): void };
@@ -160,6 +170,51 @@ export class AdministrationController {
     }
     if (!dto.password) throw new ConflictException('Informe uma senha inicial para o novo usuário');
     return this.db.user.create({ data: { name: dto.name.trim(), email, passwordHash: await this.auth.hash(dto.password), memberships: { create: { organizationId, role: dto.role } } }, select: { id: true, name: true, email: true, memberships: { select: { role: true, organizationId: true } } } });
+  }
+
+  @Get('users/:id')
+  @Roles('SYSTEM_ADMIN')
+  async getUser(@Param('id') id: string) {
+    const user = await this.db.user.findUnique({ where: { id }, select: {
+      id: true, name: true, email: true, active: true,
+      memberships: { select: { organizationId: true, role: true, organization: { select: { name: true, active: true } } } },
+    } });
+    if (!user) throw new NotFoundException('Usuário não encontrado');
+    return user;
+  }
+
+  @Patch('users/:id')
+  @Roles('SYSTEM_ADMIN')
+  async editUser(@Param('id') id: string, @Body() dto: EditUserDto) {
+    const user = await this.db.user.findUnique({ where: { id } });
+    if (!user) throw new NotFoundException('Usuário não encontrado');
+    const email = dto.email.trim().toLowerCase();
+    if (email !== user.email && await this.db.user.findUnique({ where: { email } })) throw new ConflictException('E-mail já utilizado');
+    return this.db.user.update({ where: { id }, data: { name: dto.name.trim(), email, ...(dto.password ? { passwordHash: await this.auth.hash(dto.password) } : {}) }, select: { id: true, name: true, email: true, active: true } });
+  }
+
+  @Patch('users/:id/status')
+  @Roles('SYSTEM_ADMIN')
+  async userStatus(@Req() request: AuthenticatedRequest, @Param('id') id: string, @Body() dto: UserStatusDto) {
+    const user = await this.db.user.findUnique({ where: { id } });
+    if (!user) throw new NotFoundException('Usuário não encontrado');
+    if (!dto.active && id === request.identity.userId) throw new ConflictException('Não é possível inativar seu próprio usuário');
+    return this.db.user.update({ where: { id }, data: { active: dto.active, deactivatedAt: dto.active ? null : new Date() }, select: { id: true, active: true } });
+  }
+
+  @Post('users/:id/memberships')
+  @Roles('SYSTEM_ADMIN')
+  async linkUser(@Param('id') id: string, @Body() dto: MembershipDto) {
+    const [user, org] = await Promise.all([
+      this.db.user.findUnique({ where: { id }, select: { active: true } }),
+      this.db.organization.findUnique({ where: { id: dto.organizationId }, select: { active: true } }),
+    ]);
+    if (!user?.active || !org?.active) throw new ConflictException('Usuário ou empresa inexistente/inativo');
+    return this.db.membership.upsert({
+      where: { organizationId_userId: { organizationId: dto.organizationId, userId: id } },
+      create: { organizationId: dto.organizationId, userId: id, role: dto.role },
+      update: { role: dto.role },
+    });
   }
 
   @Get('users/:id')
