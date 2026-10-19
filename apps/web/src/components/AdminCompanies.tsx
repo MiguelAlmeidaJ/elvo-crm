@@ -36,7 +36,13 @@ export default function AdminCompanies() {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const load = useCallback(async () => {
-    if (mode === 'list') {
+    if (mode === 'create') {
+      const response = await fetch('/api/v1/administration/context', { cache: 'no-store' });
+      if (!response.ok) throw new Error(await message(response));
+      const data = await response.json() as Context;
+      if (data.role !== 'SYSTEM_ADMIN') throw new Error('Acesso restrito');
+      setModules(data.modules);
+    } else if (mode === 'list') {
       const response = await fetch('/api/v1/administration/context', { cache: 'no-store' });
       if (!response.ok) throw new Error(await message(response));
       const data = await response.json() as Context;
