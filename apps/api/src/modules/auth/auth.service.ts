@@ -73,7 +73,7 @@ export class AuthService {
   async login(email: string, password: string) {
     const user = await this.db.user.findUnique({ where: { email: email.toLowerCase().trim() },
       include: { memberships: { orderBy: { createdAt: 'asc' }, take: 1, include: { organization: true } } } });
-    if (!user?.passwordHash || !(await this.verify(password, user.passwordHash))) throw new UnauthorizedException('Credenciais inválidas');
+    if (!user?.active || !user.passwordHash || !(await this.verify(password, user.passwordHash))) throw new UnauthorizedException('Credenciais inválidas');
     const membership = user.memberships[0];
     if (!membership) throw new UnauthorizedException('Usuário sem organização');
     const identity = { userId: user.id, organizationId: membership.organizationId, role: membership.role };

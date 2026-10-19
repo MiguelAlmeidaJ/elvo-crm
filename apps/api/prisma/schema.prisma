@@ -85,6 +85,8 @@ model User {
   name         String
   email        String       @unique
   passwordHash String?
+  active       Boolean      @default(true)
+  deactivatedAt DateTime?
   memberships  Membership[]
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
