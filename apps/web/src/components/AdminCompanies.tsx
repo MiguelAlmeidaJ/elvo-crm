@@ -52,7 +52,7 @@ export default function AdminCompanies() {
   async function save(event: FormEvent) {
     event.preventDefault(); setBusy(true); setError('');
     try {
-      const body = Object.fromEntries(Object.entries(form).map(([key,value]) => [key, value.trim()]));
+      const body = Object.fromEntries(Object.entries(form).map(([key,value]) => [key, value.trim() || (key === 'name' || key === 'slug' ? '' : null)]));
       const response = await fetch('/api/v1/administration/tenants' + (mode === 'edit' ? '/' + id : ''), {
         method: mode === 'edit' ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
       });
